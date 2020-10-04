@@ -1,4 +1,4 @@
-import React, { useState, useReducer, useCallback } from 'react';
+import React, { useState, useReducer, useCallback, useMemo } from 'react';
 
 import IngredientForm from './IngredientForm';
 import IngredientList from './IngredientList';
@@ -41,7 +41,7 @@ function Ingredients() {
   // const [isLoading, setIsLoading] = useState(false);
   // const [error, setError] = useState();
 
-  const addIngredientHandler = ingredient => {
+  const addIngredientHandler = useCallback(ingredient => {
     dispatchHttp({ type: 'SEND' });
     fetch('https://react-hooks-be04b.firebaseio.com/ingredients.json', {
       method: 'POST',
@@ -59,14 +59,14 @@ function Ingredients() {
       //   { id: responseData.name, ...ingredient }
       // ]);
     })
-  }
+  }, [])
 
   const filterIngsHandler = useCallback(filterIngredients => {
     // setIngredients(filterIngredients);
     dispatch({ type: 'SET', ingredients: filterIngredients })
   }, []);
 
-  const removeIngredientHandler = ingredientId => {
+  const removeIngredientHandler = useCallback(ingredientId => {
     dispatchHttp({ type: 'SEND' });
     fetch(`https://react-hooks-be04b.firebaseio.com/ingredients/${ingredientId}.json`, {
       method: 'DELETE'
@@ -80,11 +80,17 @@ function Ingredients() {
     }).catch(error => {
       dispatchHttp({ type: 'ERROR', message: error.message });
     })
-  };
+  }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     dispatchHttp({ type: 'CLEAR' });
-  }
+  }, []);
+
+  const ingredientList = useMemo(() => {
+    return (
+      <IngredientList ingredients={ingredients} onRemoveItem={removeIngredientHandler} />
+    );
+  }, [ingredients, removeIngredientHandler])
   return (
     <div className="App">
       { httpState.error && <ErrorModal onClose={clearError} >{httpState.error}</ErrorModal>}
@@ -92,7 +98,7 @@ function Ingredients() {
 
       <section>
         <Search onFilterIngredients={filterIngsHandler} />
-        <IngredientList ingredients={ingredients} onRemoveItem={removeIngredientHandler} />
+        {ingredientList}
       </section>
     </div>
   );
